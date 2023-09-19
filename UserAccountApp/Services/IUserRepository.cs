@@ -25,6 +25,12 @@ namespace UserAccountApp.Services
         public User Register(User user);
 
         /// <summary>
+        /// Добавляет пользователей в хранилище
+        /// </summary>
+        /// <param name="user">Модель пользователя</param>
+        public void AddUsers(IEnumerable<User> users);
+
+        /// <summary>
         /// Меняет пароль пользователя
         /// </summary>
         /// <param name="userChangePassword">Форма смены пароля</param>

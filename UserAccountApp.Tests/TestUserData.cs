@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using FluentValidation.Results;
+using Moq;
 using UserAccountApp.Models;
 using UserAccountApp.Services;
 
@@ -11,15 +12,12 @@ namespace UserAccountApp.Tests
         public void GetAll_ShouldReturnListOfUsers()
         {
             //Arrange
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(GetUsers());
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
 
             //Act
             var result = userData.GetAll();
 
             //Assert
-            mock.VerifyAll();
             Assert.IsType<List<User>>(result);
         }
 
@@ -27,16 +25,13 @@ namespace UserAccountApp.Tests
         public void GetByEmail_ShouldReturnUser()
         {
             //Arrange
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(GetUsers());
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var firstUser = userData.GetAll().First();
 
             //Act
             var result = userData.GetByEmail(firstUser.Email);
 
             //Assert
-            mock.VerifyAll();
             Assert.IsType<User>(result);
             Assert.Equal(firstUser, result);
         }
@@ -45,15 +40,12 @@ namespace UserAccountApp.Tests
         public void GetByEmail_ShouldReturnNull()
         {
             //Arrange
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(GetUsers());
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
 
             //Act
             var result = userData.GetByEmail(_correctEmail);
 
             //Assert
-            mock.VerifyAll();
             Assert.Null(result);
         }
 
@@ -65,16 +57,13 @@ namespace UserAccountApp.Tests
         public void Register_ShouldReturnUser()
         {
             //Arrange
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(GetUsers());
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var newUser = GetUserCorrectModel();
 
             //Act
             var result = userData.Register(newUser);
 
             //Assert
-            mock.VerifyAll();
             Assert.IsType<User>(result);
             Assert.Equal(newUser.FirstName, result.FirstName);
             Assert.Equal(newUser.SecondName, result.SecondName);
@@ -88,16 +77,13 @@ namespace UserAccountApp.Tests
         public void Register_ExceptionUserAlreadyExists()
         {
             //Arrange
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(GetUsers());
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var existingUser = GetUsers().First();
 
             //Act
             Action act = () => userData.Register(existingUser);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
             Assert.Equal(UserData.userAlreadyExists, exception.Message);
         }
@@ -110,15 +96,14 @@ namespace UserAccountApp.Tests
         public void ChangePassword_ChangesPass()
         {
             //Arrange
+            var mock = new Mock<UserData>();
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            mock.Setup(a => a.GetByEmail(It.IsAny<string>())).Returns(user);
             var newUserChangePassword = new UserChangePassword(user.Email,
                 _correctPassword, _correctNewPassword);
 
             //Act
-            userData.ChangePassword(newUserChangePassword);
+            mock.Object.ChangePassword(newUserChangePassword);
 
             //Assert
             mock.VerifyAll();
@@ -129,18 +114,16 @@ namespace UserAccountApp.Tests
         public void ChangePassword_ExceptionOldPassDoesntMatch()
         {
             //Arrange
-            var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> {user});
-            var userData = new UserData(mock.Object);
+            var mock = new Mock<UserData>();
+            mock.Setup(a => a.GetByEmail(It.IsAny<string>())).Returns(GetUserWithHashedPass());
+            var user = mock.Object.GetByEmail(GetUserWithHashedPass().Email);
             var newUserChangePassword = new UserChangePassword(user.Email, 
                 _correctPassword+"!",_correctNewPassword);
 
             //Act
-            Action act = () => userData.ChangePassword(newUserChangePassword);
+            Action act = () => mock.Object.ChangePassword(newUserChangePassword);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
             Assert.Equal(UserData.oldPassDoesntMatch, exception.Message);
         }
@@ -150,9 +133,7 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var newUserChangePassword = new UserChangePassword("new"+user.Email,
                 _correctPassword, _correctNewPassword);
 
@@ -160,7 +141,6 @@ namespace UserAccountApp.Tests
             Action act = () => userData.ChangePassword(newUserChangePassword);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
             Assert.Equal(UserData.userDoesntExist, exception.Message);
         }
@@ -174,16 +154,16 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            var mock = new Mock<UserData>();
+            mock.Setup(a => a.GetByEmail(It.IsAny<string>())).Returns(user);
+
             var newFirstName = user.FirstName + "a";
             var newAddress = "New Address";
             var userChangeDetails = new UserChangeDetails(user.Email,
                 newFirstName, user.SecondName, user.FatherName, newAddress);
 
             //Act
-            userData.ChangeDetails(userChangeDetails);
+            mock.Object.ChangeDetails(userChangeDetails);
 
             //Assert
             mock.VerifyAll();
@@ -196,9 +176,7 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var userChangeDetails = new UserChangeDetails("new" + user.Email,
                 _correctFirstName+"a", _correctSecondName, _correctFatherName, _correctAddress);
 
@@ -206,7 +184,6 @@ namespace UserAccountApp.Tests
             Action act = () => userData.ChangeDetails(userChangeDetails);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
             Assert.Equal(UserData.userDoesntExist, exception.Message);
         }
@@ -220,16 +197,13 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var userLogin = new UserLogin(user.Email, _correctPassword);
 
             //Act
             var result = userData.Login(userLogin);
 
             //Assert
-            mock.VerifyAll();
             Assert.IsType<User>(result);
         }
 
@@ -238,17 +212,16 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
-            var userLogin = new UserLogin(user.Email, _correctPassword+"Qwe1*");
+            var mock = new Mock<UserData>();
+            mock.Setup(a => a.GetByEmail(It.IsAny<string>())).Returns(user);
+            var userLogin = new UserLogin(user.Email, _correctPassword + "Qwe1*");
 
             //Act
-            Action act = () => userData.Login(userLogin);
+            Action act = () => mock.Object.Login(userLogin);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
+            mock.VerifyAll();
             Assert.Equal(UserData.wrongPass, exception.Message);
         }
 
@@ -257,22 +230,175 @@ namespace UserAccountApp.Tests
         {
             //Arrange
             var user = GetUserWithHashedPass();
-            var mock = new Mock<IUserDataGenerator>();
-            mock.Setup(a => a.GenerateUsers()).Returns(new List<User> { user });
-            var userData = new UserData(mock.Object);
+            var userData = new UserData();
             var userLogin = new UserLogin("new"+user.Email, _correctPassword);
 
             //Act
             Action act = () => userData.Login(userLogin);
 
             //Assert
-            mock.VerifyAll();
             var exception = Assert.Throws<Exception>(act);
             Assert.Equal(UserData.userDoesntExist, exception.Message);
         }
 
         #endregion
 
+        #region ValidateUser Method Tests
 
+        [Fact]
+        public void ValidateUser_Valid()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void ValidateUser_FirstNameIncorrect()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.FirstName = _correctFirstName + "1!";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("FirstName"));
+        }
+
+        [Fact]
+        public void ValidateUser_SecondNameIncorrect()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.SecondName = _correctSecondName + "*94";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("SecondName"));
+        }
+
+        [Fact]
+        public void ValidateUser_FatherNameIncorrect()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.FatherName = _correctFatherName + " ";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("FatherName"));
+        }
+
+        [Fact]
+        public void ValidateUser_EmailIncorrect()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.Email = _incorrectEmail;
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("Email"));
+        }
+
+        [Fact]
+        public void ValidateUser_PasswordNoUpperNoNumsNoSpecCharsTooShort()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.Password = "ezpass";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Equal(4, result.Errors.Count);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("Password"));
+        }
+
+        [Fact]
+        public void ValidateUser_PasswordNoUpperNoNumsNoSpecChars()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.Password = "easypass";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Equal(3, result.Errors.Count);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("Password"));
+        }
+
+        [Fact]
+        public void ValidateUser_PasswordNoLowerNoNums()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.Password = "EASYPASSWORD!";
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Equal(2, result.Errors.Count);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("Password"));
+        }
+
+        [Fact]
+        public void ValidateUser_IncorrectAddress()
+        {
+            //Arrange
+            var user = GetUserCorrectModel();
+            user.Address = _tooLongAddress;
+            var userData = new UserData();
+
+            //Act
+            var result = userData.ValidateUser(user);
+
+            //Assert
+            Assert.IsType<ValidationResult>(result);
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains(result.Errors, error => error.PropertyName.Equals("Address"));
+        }
+
+        #endregion
     }
 }

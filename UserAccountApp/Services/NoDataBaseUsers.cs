@@ -1,16 +1,17 @@
-﻿using UserAccountApp.Models;
+﻿using Microsoft.AspNetCore.Components;
+using UserAccountApp.Models;
 
 namespace UserAccountApp.Services
 {
     /// <summary>
     /// Реализует функционал по генерации моделей пользователей
     /// </summary>
-    public class NoDataBaseUsers : IUserDataGenerator
+    public static class NoDataBaseUsers
     {
         /// <summary>
         /// Генерирует список пользователей
         /// </summary>
-        public List<User> GenerateUsers()
+        public static List<User> GenerateUsers()
         {
             List<User> users = new List<User>() {
                 new User("Валентин", "Козин", "Адамович", "valentin.kozin@hotmail.com", "yUxUh5gA", "Россия, г. Казань, Южная ул., д. 18 кв.29").Register(),

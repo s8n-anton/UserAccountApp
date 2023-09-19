@@ -20,21 +20,15 @@ namespace UserAccountApp.Services
         private readonly IValidator<UserChangePassword> _userChangePasswordValidator = new UserChangePasswordValidator();
         private readonly IValidator<UserChangeDetails> _userChangeDetailsValidator = new UserChangeDetailsValidator();
         private readonly IValidator<UserLogin> _userLoginValidator = new UserLoginValidator();
-        private readonly IUserDataGenerator _userSource;
 
-        //хранение моделей (БД в данной реализации не подразумевается)
-        private readonly List<User> _users;
+        //Хранение моделей (БД в данной реализации не подразумевается)
+        private static List<User> _users = NoDataBaseUsers.GenerateUsers();
 
-        // В конструкторе реализована инъекция зависимости
-        // Чтобы она работала, в Program.cs зарегистрирован сервис
-        public UserData(IUserDataGenerator dataGen)
-        {
-            _userSource = dataGen;
-            _users = _userSource.GenerateUsers();
-
+        public void AddUsers(IEnumerable<User> users) {
+            _users.AddRange(users);
         }
 
-        public IEnumerable<User> GetAll()
+        public virtual IEnumerable<User> GetAll()
         {
             if (_users == null)
                 return new List<User>();
@@ -42,7 +36,7 @@ namespace UserAccountApp.Services
                 return _users;
         }
 
-        public User? GetByEmail(string email)
+        public virtual User? GetByEmail(string email)
         {
             return _users.FirstOrDefault(x => x.Email == email);
         }

@@ -20,7 +20,6 @@ namespace UserAccountApp
 
             //Нужно для инъекции зависимостей через конструктор в контроллере
             builder.Services.AddScoped<IUserRepository, UserData>();
-            builder.Services.AddScoped<IUserDataGenerator, NoDataBaseUsers>();
 
             var app = builder.Build();
 
